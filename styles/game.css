@@ -10,14 +10,89 @@ html, body {
 	padding: 0px;
 	height: 100%;
 	width: 100%;
+	background-image: linear-gradient(#000000, #aaaaaa);
 }
+
+span {
+	width: 100%;
+	font-family: "BitFont";
+	text-align: center;
+	color: white;
+}
+
 
 #game-canvas {
 	width: 100%;
 	height: 100%;
-	background: black;
 	image-rendering: crisp-edges;
 	image-rendering: -moz-crisp-edges;
 	image-rendering: -webkit-crisp-edges;
 	image-rendering: pixelated;
+}
+
+#game-title, #controller-title {
+	display: block;
+}
+
+@media only screen and (orientation : portrait) {
+	#game-title {
+		margin: 5vw 0px 5vw 0vw;
+		font-size: 14vw;
+	}
+
+	#controller-title {
+		font-size: 7vw;
+		margin: 5vw 0px 5vw 0vw;
+	}
+
+	.button {
+		font-size: 9vw;
+		background-color: black;
+		padding: 3vw;
+		border-radius: 5px;
+		margin-bottom: 5vw;
+	}
+
+	.button-div {
+		margin-bottom: 10vw;
+	}
+}
+
+@media only screen and (orientation : landscape) {
+	#controller-title {
+		font-size: 5vw;
+		margin: 2vw 0px 2vw 0vw;
+	}
+
+	#game-title {
+		margin: 2vw 0px 2vw 0vw;
+		font-size: 10vw;
+	}
+
+	.button {
+		font-size: 9vh;
+		background-color: black;
+		padding: 3vh;
+		border-radius: 5px;
+		margin-bottom: 1vh;
+	}
+
+	.button-div {
+		margin-bottom: 10vh;
+	}
+}
+
+.button:hover {
+	background-color: #1A1A1A;
+	cursor: pointer;
+}
+
+.button-div {
+	width: 100%;
+	display: block;
+	text-align: center;
+}
+
+.hidden {
+	display: none !important;
 }

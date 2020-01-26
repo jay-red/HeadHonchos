@@ -5,14 +5,38 @@
 		<meta name="viewport" content="width=device-width, user-scalable=no" />
 	</head>
 	<body>
-		<div id="room">
+		<div id="room" class="visible">
+			<span id="game-title">Head Honcho</span>
+			<div id="create-room-div" class="button-div">
+				<span id="create-room-button" class="button">Create Room</span>
+			</div>
+			<div id="join-room-div" class="button-div">
+				<span id="join-room-button" class="button">Join Room</span>
+			</div>
 		</div>
-		<div id="controller">
+		<div id="creation" class="hidden">
+			<span id="room-title">Room Code</span>
+			<span id="code-text">Room Code</span>
 		</div>
-		<div id="waiting">
-			
+		<div id="join" class="hidden">
+			<input id="room-input" type="text" />
+			<div id="join-room-div" class="button-div">
+				<span id="join-button" class="button">Phone</span>
+			</div>
 		</div>
-		<div id="game">
+		<div id="controller" class="hidden">
+			<span id="controller-title">Pick a Control Scheme</span>
+			<div id="create-room-div" class="button-div">
+				<span id="keyboard-button" class="button">Computer</span>
+			</div>
+			<div id="join-room-div" class="button-div">
+				<span id="phone-button" class="button">Phone</span>
+			</div>
+		</div>
+		<div id="waiting" class="hidden">
+
+		</div>
+		<div id="game" class="hidden">
 			<canvas id="game-canvas"></canvas>
 		</div>
 		<script src="scripts/game.js"></script>
