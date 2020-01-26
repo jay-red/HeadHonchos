@@ -18,6 +18,7 @@ function on_load() {
 	CONSTANTS[ "MIN_THRESH_GAMMA" ] = 1;
 	CONSTANTS[ "MIN_THRESH_BETA" ] = 2;
 	CONSTANTS[ "SHOOT_THRESH" ] = 1000;
+	CONSTANTS[ "LEVEL_SPEED" ] = [ 0.5, 1, 1.5, 2 ];
 	CONSTANTS[ "MAX_DX" ] = 2;
 	CONSTANTS[ "MAX_DY" ] = 2;
 	for( var i = 0; i < 360; i++ ) {
@@ -51,7 +52,10 @@ function on_load() {
 		function PlayerData() {
 			this.held_level = 0;
 			this.held_start = -1;
+			this.held_ammo = -1;
 			this.held_end = -1;
+			this.ammo = 3;
+			this.reloaded = true;
 		}
 
 		function Player() {
@@ -87,8 +91,6 @@ function on_load() {
 			this.projectiles.width = 768;
 			this.projectiles.height = 96;
 			ctx = this.projectiles.getContext( "2d" );
-			ctx.fillStyle = "#FFFFFF";
-			ctx.fillRect( 0, 0, 768, 96 );
 			ctx.fillStyle = window.CONSTANTS.COLORS[ p1 ];
 			ctx.fillRect( 36, 36, 24, 24 );
 			ctx.fillRect( 120, 24, 48, 48 );
@@ -116,29 +118,73 @@ function on_load() {
 
 		function update_projectile( i ) {
 			var p = game.projectiles[ i ];
-			var dx = 0.5 * CONSTANTS.ANGLES[ p.rotation ][ 1 ],
-				dy = 0.5 * CONSTANTS.ANGLES[ p.rotation ][ 2 ];
-			p.x += game.time.ticks * p.dx;
-			p.y += game.time.ticks * p.dy;
+			var dx = CONSTANTS.LEVEL_SPEED[ p.level ] * CONSTANTS.ANGLES[ p.rotation ][ 1 ],
+				dy = CONSTANTS.LEVEL_SPEED[ p.level ] * CONSTANTS.ANGLES[ p.rotation ][ 2 ];
+			p.x += game.time.ticks * dx;
+			p.y += game.time.ticks * dy;
+		}
+
+		function fire_projectile( x, y, rotation, mine, level ) {
+			var i, proj;
+			for( i = 0; i < CONSTANTS.MAX_PROJ; i++ ) {
+				proj = game.projectiles[ i ];
+				if( proj.active ) continue;
+				game.projectiles[ i ].active = true;
+				game.projectiles[ i ].x = x;
+				game.projectiles[ i ].y = y;
+				game.projectiles[ i ].rotation = rotation;
+				game.projectiles[ i ].mine = mine;
+				game.projectiles[ i ].level = level;
+				return;
+			}
 		}
 
 		function update_player() {
-			var me = game.me, ticks;
+			var me = game.me, ticks, ticks_ammo;
 			if( game.controller.shoot ) {
 				if( me.data.held_start == -1 ) me.data.held_start = game.time.last_update;
+				if( me.data.held_ammo == -1 ) me.data.held_ammo = game.time.last_update;
 				ticks = game.time.last_update - me.data.held_start;
-				if( ticks > CONSTANTS.SHOOT_THRESH * 3 ) {
-					me.data.held_level = 3;
-				} else if( ticks > CONSTANTS.SHOOT_THRESH * 2 ) {
-					me.data.held_level = 2;
-				} else if( ticks > CONSTANTS.SHOOT_THRESH ) {
-					me.data.held_level = 1;
-				} else {
-					me.data.held_level = 0;
+				ticks_ammo = game.time.last_update - me.data.held_ammo;
+				if( me.data.ammo > 0 ) {
+					if( ticks > CONSTANTS.SHOOT_THRESH * 3 ) {
+						me.data.held_level = 3;
+					} else if( ticks > CONSTANTS.SHOOT_THRESH * 2 ) {
+						me.data.held_level = 2;
+					} else if( ticks > CONSTANTS.SHOOT_THRESH ) {
+						me.data.held_level = 1;
+					} else {
+						me.data.held_level = 0;
+					}
+					if( ticks_ammo > CONSTANTS.SHOOT_THRESH ) {
+						me.data.ammo--;
+						console.log( me.data.ammo );
+						console.log( me.data.held_level );
+						me.data.held_ammo = game.time.last_update;
+					}
 				}
 			} else {
 				if( me.data.held_start != -1 ) {
 					me.data.held_start = -1;
+					if( me.data.ammo == 0 ) {
+						if( me.data.reloaded ) {
+							me.data.held_end = -1;
+							me.data.held_ammo = -1
+							me.data.reloaded = false;
+							fire_projectile( me.x, me.y, ( me.rotation + 270 ) % 360, true, me.data.held_level );
+						}
+					} else {
+						if( me.data.held_level == 0 ) me.data.ammo--;
+						fire_projectile( me.x, me.y, ( me.rotation + 270 ) % 360, true, me.data.held_level );
+					}
+				} else {
+					if( me.data.held_end == -1 ) me.data.held_end = game.time.last_update;
+					ticks = game.time.last_update - me.data.held_end;
+					if( me.data.ammo < 3 && ticks > CONSTANTS.SHOOT_THRESH ) {
+						me.data.held_end = game.time.last_update;
+						me.data.ammo++;
+						me.data.reloaded = true;
+					}
 				}
 			}
 			if( game.controller.keyboard ) {
@@ -189,7 +235,7 @@ function on_load() {
 								ctx.rotate( CONSTANTS.ANGLES[ p.rotation ][ 0 ] );
 								ctx.drawImage( game.sprites.projectiles, x_offset, 0, CONSTANTS.TILE_WIDTH, CONSTANTS.TILE_WIDTH, 0, 0, CONSTANTS.TILE_WIDTH, CONSTANTS.TILE_WIDTH );
 							} else {
-								ctx.translate( canvas.width - p.y + CONSTANTS.HALF_WIDTH, p.x - CONSTANTS.HALF_WIDTH );
+								ctx.translate( canvas.width - p.y - CONSTANTS.HALF_WIDTH, p.x - CONSTANTS.HALF_WIDTH );
 								ctx.rotate( CONSTANTS.ANGLES[ 90 ][ 0 ] );
 								ctx.rotate( CONSTANTS.ANGLES[ p.rotation ][ 0 ] );
 								ctx.drawImage( game.sprites.projectiles, x_offset, 0, CONSTANTS.TILE_WIDTH, CONSTANTS.TILE_WIDTH, 0, 0, CONSTANTS.TILE_WIDTH, CONSTANTS.TILE_WIDTH );
@@ -199,7 +245,7 @@ function on_load() {
 					}
 				}
 			}
-			x_offset = game.me.data.held_level * CONSTANTS.TILE_WIDTH;
+			x_offset = ( 3 - game.me.data.ammo ) * CONSTANTS.TILE_WIDTH;
 			if( game.landscape ) {
 				ctx.translate( ( game.me.x - CONSTANTS.HALF_WIDTH ) | 0, ( game.me.y - CONSTANTS.HALF_WIDTH ) | 0 );
 				ctx.rotate( CONSTANTS.ANGLES[ game.me.rotation ][ 0 ] );
@@ -239,27 +285,18 @@ function on_load() {
 		function game_loop( ts ) {
 			if( game.time.last_update == -1 ) game.time.last_update = ts;
 			game.time.ticks = ts - game.time.last_update;
+			game.time.last_update = ts;
 			update_game();
 			var landscape = window.innerWidth > window.innerHeight;
 			if( landscape != game.landscape ) {
 				game.landscape = landscape;
 				scale_canvas();
 			}
-			game.time.last_update = ts;
 			window.requestAnimationFrame( game_loop );
 		}
 
 		function init_game() {
 			game.render.canvas = document.getElementById( "game-canvas" );
-			var p = game.projectiles[ 0 ];
-			p.active = true;
-			p.x = 0;
-			p.y = 0;
-			p.mine = false;
-			p.level = 0;
-			p.rotation = 45;
-			p.dy = 0.5;
-			p.dx = 0.5;
 			scale_canvas();
 		}
 
